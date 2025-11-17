@@ -1,0 +1,162 @@
+This is how the downloading logs look like:
+llama.cpp)
+  - Qwen 2.5 1.5B Instruct Q6_K (llama.cpp)
+  - Llama 3.2 1B Instruct Q6_K (llama.cpp)
+  - LiquidAI LFM2 350M Q8_0 (llama.cpp)
+  - SmolLM2 1.7B Instruct Q6_K_L (llama.cpp)
+  - Whisper Tiny (WhisperKit)
+  - Qwen 2.5 0.5B Instruct Q6_K (llama.cpp)
+  - Whisper Base (WhisperKit)
+Starting WhisperKit download for model: whisper-base
+Attempting to download coremldata.bin from https://huggingface.co/argmaxinc/whisperkit-coreml/resolve/main/openai_whisper-base/MelSpectrogram.mlmodelc/coremldata.bin
+Saved coremldata.bin to /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/RunAnywhere/Models/WhisperKit/whisper-base/MelSpectrogram.mlmodelc/coremldata.bin
+Attempting to download metadata.json from https://huggingface.co/argmaxinc/whisperkit-coreml/resolve/main/openai_whisper-base/MelSpectrogram.mlmodelc/metadata.json
+Download progress for Whisper Base: 6%
+Saved metadata.json to /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/RunAnywhere/Models/WhisperKit/whisper-base/MelSpectrogram.mlmodelc/metadata.json
+Attempting to download model.mil from https://huggingface.co/argmaxinc/whisperkit-coreml/resolve/main/openai_whisper-base/MelSpectrogram.mlmodelc/model.mil
+Download progress for Whisper Base: 13%
+Saved model.mil to /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/RunAnywhere/Models/WhisperKit/whisper-base/MelSpectrogram.mlmodelc/model.mil
+Download progress for Whisper Base: 20%
+Attempting to download coremldata.bin from https://huggingface.co/argmaxinc/whisperkit-coreml/resolve/main/openai_whisper-base/AudioEncoder.mlmodelc/coremldata.bin
+Saved coremldata.bin to /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/RunAnywhere/Models/WhisperKit/whisper-base/AudioEncoder.mlmodelc/coremldata.bin
+Attempting to download metadata.json from https://huggingface.co/argmaxinc/whisperkit-coreml/resolve/main/openai_whisper-base/AudioEncoder.mlmodelc/metadata.json
+Download progress for Whisper Base: 26%
+Saved metadata.json to /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/RunAnywhere/Models/WhisperKit/whisper-base/AudioEncoder.mlmodelc/metadata.json
+Attempting to download model.mil from https://huggingface.co/argmaxinc/whisperkit-coreml/resolve/main/openai_whisper-base/AudioEncoder.mlmodelc/model.mil
+Download progress for Whisper Base: 33%
+Saved model.mil to /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/RunAnywhere/Models/WhisperKit/whisper-base/AudioEncoder.mlmodelc/model.mil
+Attempting to download model.mlmodel from https://huggingface.co/argmaxinc/whisperkit-coreml/resolve/main/openai_whisper-base/AudioEncoder.mlmodelc/model.mlmodel
+Download progress for Whisper Base: 40%
+Saved model.mlmodel to /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/RunAnywhere/Models/WhisperKit/whisper-base/AudioEncoder.mlmodelc/model.mlmodel
+Attempting to download weights/weight.bin from https://huggingface.co/argmaxinc/whisperkit-coreml/resolve/main/openai_whisper-base/AudioEncoder.mlmodelc/weights/weight.bin
+Download progress for Whisper Base: 46%
+✅ LLM instance created
+🧪 Validating model readiness with test prompt
+✅ Skipping test prompt to avoid blocking
+✅ Model initialized successfully
+✅ Model status updated: 'LiquidAI LFM2 350M Q4_K_M' is loaded
+✅ Model status updated: 'LiquidAI LFM2 350M Q4_K_M' is loaded
+✅ Verified model 'LiquidAI LFM2 350M Q4_K_M' is loaded in SDK
+✅ Verified model 'LiquidAI LFM2 350M Q4_K_M' is loaded in SDK
+Saved weights/weight.bin to /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/RunAnywhere/Models/WhisperKit/whisper-base/AudioEncoder.mlmodelc/weights/weight.bin
+Download progress for Whisper Base: 53%
+Attempting to download coremldata.bin from https://huggingface.co/argmaxinc/whisperkit-coreml/resolve/main/openai_whisper-base/TextDecoder.mlmodelc/coremldata.bin
+Saved coremldata.bin to /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/RunAnywhere/Models/WhisperKit/whisper-base/TextDecoder.mlmodelc/coremldata.bin
+Attempting to download metadata.json from https://huggingface.co/argmaxinc/whisperkit-coreml/resolve/main/openai_whisper-base/TextDecoder.mlmodelc/metadata.json
+Download progress for Whisper Base: 60%
+Saved metadata.json to /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/RunAnywhere/Models/WhisperKit/whisper-base/TextDecoder.mlmodelc/metadata.json
+Attempting to download model.mil from https://huggingface.co/argmaxinc/whisperkit-coreml/resolve/main/openai_whisper-base/TextDecoder.mlmodelc/model.mil
+Download progress for Whisper Base: 66%
+Saved model.mil to /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/RunAnywhere/Models/WhisperKit/whisper-base/TextDecoder.mlmodelc/model.mil
+Attempting to download model.mlmodel from https://huggingface.co/argmaxinc/whisperkit-coreml/resolve/main/openai_whisper-base/TextDecoder.mlmodelc/model.mlmodel
+Download progress for Whisper Base: 73%
+Saved model.mlmodel to /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/RunAnywhere/Models/WhisperKit/whisper-base/TextDecoder.mlmodelc/model.mlmodel
+Attempting to download weights/weight.bin from https://huggingface.co/argmaxinc/whisperkit-coreml/resolve/main/openai_whisper-base/TextDecoder.mlmodelc/weights/weight.bin
+Download progress for Whisper Base: 80%
+Saved weights/weight.bin to /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/RunAnywhere/Models/WhisperKit/whisper-base/TextDecoder.mlmodelc/weights/weight.bin
+Downloading config.json from https://huggingface.co/argmaxinc/whisperkit-coreml/resolve/main/openai_whisper-base/config.json
+Download progress for Whisper Base: 86%
+Saved config.json to /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/RunAnywhere/Models/WhisperKit/whisper-base/config.json
+Downloading generation_config.json from https://huggingface.co/argmaxinc/whisperkit-coreml/resolve/main/openai_whisper-base/generation_config.json
+Download progress for Whisper Base: 93%
+Saved generation_config.json to /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/RunAnywhere/Models/WhisperKit/whisper-base/generation_config.json
+WhisperKit download complete for model: whisper-base
+Download progress for Whisper Base: 100%
+Download progress for Whisper Base: 100%
+Model Whisper Base downloaded successfully
+Loaded 9 models from registry
+  - SmolLM2 360M Q8_0 (llama.cpp)
+  - LiquidAI LFM2 350M Q4_K_M (llama.cpp)
+  - Qwen 2.5 1.5B Instruct Q6_K (llama.cpp)
+  - Llama 3.2 1B Instruct Q6_K (llama.cpp)
+  - LiquidAI LFM2 350M Q8_0 (llama.cpp)
+  - SmolLM2 1.7B Instruct Q6_K_L (llama.cpp)
+  - Whisper Tiny (WhisperKit)
+  - Qwen 2.5 0.5B Instruct Q6_K (llama.cpp)
+  - Whisper Base (WhisperKit)
+table models has no column named thinkingPattern in "INSERT INTO "models" ("id", "name", "category", "format", "downloadURL", "localPath", "downloadSize", "memoryRequired", "compatibleFrameworks", "preferredFramework", "contextLength", "supportsThinking", "thinkingPattern", "metadata", "source", "createdAt", "updatedAt", "syncPending", "lastUsed", "usageCount") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+
+
+Following are the logs for when we tried to run the voice pipeline the model was redownloaded:
+ modular pipeline...
+SimpleEnergyVAD initialized - sampleRate: 16000, frameLength: 1600 samples, threshold: 0.005000
+SimpleEnergyVAD started
+🎯 Starting VAD calibration - measuring ambient noise for 2.000000 seconds...
+Initializing component: VAD
+Component initialized: VAD
+Creating WhisperKit STT service
+Initializing component: STT
+Service instance created
+Initializing with model: whisper-base
+Starting initialization...
+Model path requested: whisper-base
+Creating WhisperKit instance with model: openai_whisper-base
+🔍 Checking for local model at: /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/huggingface/models/argmaxinc/whisperkit-coreml/openai_whisper-base
+⬇️ No local model found, need to download...
+🔧 Disabling offline mode check for model download...
+📥 Downloading model: openai_whisper-base...
+📍 Expected download location: /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/huggingface/models/argmaxinc/whisperkit-coreml/openai_whisper-base
+📍 Repository: argmaxinc/whisperkit-coreml
+Prewarming models...
+numANECores: Unknown aneSubType
+Loading models...
+Loaded models for whisper size: base in 12.51s
+✅ WhisperKit initialized successfully with downloaded model: openai_whisper-base
+✅ Verified model saved at: /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/huggingface/models/argmaxinc/whisperkit-coreml/openai_whisper-base
+📦 Downloaded model contents:
+   - TextDecoder.mlmodelc
+   - config.json
+   - MelSpectrogram.mlmodelc
+   - models
+   - generation_config.json
+   - AudioEncoder.mlmodelc
+✅ Successfully initialized WhisperKit
+isInitialized: true
+WhisperKit service created successfully
+Component initialized: STT
+Creating LLMSwift service
+Using default model - service will use currently loaded model or be initialized later
+LLMSwift service created successfully
+Initializing component: LLM
+🚀 Using default/already loaded model in SDK
+📂 Using model from SDK: LiquidAI LFM2 350M Q4_K_M at path: /var/mobile/Containers/Data/Application/6CD2641E-10ED-42E0-8A79-0C4C855E09C2/Documents/RunAnywhere/Models/LlamaCpp/lfm2-350m-q4-k-m/lfm2-350m-q4-k-m.gguf
+📊 Model file size: 229309376 bytes
+🔍 Determining template for filename: lfm2-350m-q4-k-m.gguf
+⚠️ Using default ChatML template
+📝 Using template: Template(system: (prefix: "<|im_start|>system\n", suffix: "<|im_end|>\n"), user: (prefix: "<|im_start|>user\n", suffix: "<|im_end|>\n"), bot: (prefix: "<|im_start|>assistant\n", suffix: "<|im_end|>\n"), systemPrompt: nil, stopSequence: Optional("<|im_end|>"), prefix: "", shouldDropLast: false), maxTokens: 2048
+🚀 Creating LLM instance...
+GNERATING WITH SEEED: 1927035300
+✅ LLM instance created from SDK's loaded model
+✅ Model initialized successfully
+Component initialized: LLM
+Initializing component: TTS
+System TTS initialized - using existing audio session configuration
+System TTS initialized - using existing audio session configuration
+Component initialized: TTS
+All components initialized successfully
+Conversation pipeline started
+📏 Calibration frame 1/20: energy=0.007126
+📏 Calibration frame 2/20: energy=0.007126
+📏 Calibration frame 3/20: energy=0.019951
+📏 Calibration frame 4/20: energy=0.018527
+📏 Calibration frame 5/20: energy=0.015135
+📏 Calibration frame 6/20: energy=0.020712
+📏 Calibration frame 7/20: energy=0.016545
+📏 Calibration frame 8/20: energy=0.021532
+📏 Calibration frame 9/20: energy=0.018110
+📏 Calibration frame 10/20: energy=0.018067
+📏 Calibration frame 11/20: energy=0.021190
+📏 Calibration frame 12/20: energy=0.021025
+📏 Calibration frame 13/20: energy=0.023807
+📏 Calibration frame 14/20: energy=0.019448
+📏 Calibration frame 15/20: energy=0.021300
+📏 Calibration frame 16/20: energy=0.104250
+📏 Calibration frame 17/20: energy=0.090206
+📏 Calibration frame 18/20: energy=0.089219
+📏 Calibration frame 19/20: energy=0.221518
+📏 Calibration frame 20/20: energy=0.136963
+⚠️ Calibration detected high ambient noise. Capping threshold at 0.020
+✅ VAD Calibration Complete:
+  📊 Statistics: Mean=0.045588, Median=0.021025
+  📊 Percentiles: 75th=0.089219, 90th=0.136963, Max=0.221518
+  🎯 Ambient Noise Level:

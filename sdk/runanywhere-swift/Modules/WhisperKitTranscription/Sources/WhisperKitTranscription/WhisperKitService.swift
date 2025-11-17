@@ -41,29 +41,125 @@ public class WhisperKitService: STTService {
             let whisperKitModelName = mapModelIdToWhisperKitName(modelPath ?? "whisper-base")
             logger.info("Creating WhisperKit instance with model: \(whisperKitModelName)")
 
-            // Initialize WhisperKit with specific model
-            // Try with different initialization approach
-            logger.info("🔧 Attempting WhisperKit initialization with model: \(whisperKitModelName)")
+            // Strategy 1: Check if model exists locally
+            let localModelPath = getLocalModelPath(for: whisperKitModelName)
+            logger.info("🔍 Checking for local model at: \(localModelPath.path)")
 
-            // First try with just model name
-            do {
+            // Check if all required model components exist (matching WhisperKit's loadModels() requirements)
+            // WhisperKit requires: MelSpectrogram, AudioEncoder, and TextDecoder
+            let melSpectrogramPath = localModelPath.appendingPathComponent("MelSpectrogram.mlmodelc")
+            let audioEncoderPath = localModelPath.appendingPathComponent("AudioEncoder.mlmodelc")
+            let textDecoderPath = localModelPath.appendingPathComponent("TextDecoder.mlmodelc")
+
+            let hasLocalModel = FileManager.default.fileExists(atPath: melSpectrogramPath.path) &&
+                               FileManager.default.fileExists(atPath: audioEncoderPath.path) &&
+                               FileManager.default.fileExists(atPath: textDecoderPath.path)
+
+            if hasLocalModel {
+                logger.info("✅ Found all required model components:")
+                logger.info("   - MelSpectrogram.mlmodelc")
+                logger.info("   - AudioEncoder.mlmodelc")
+                logger.info("   - TextDecoder.mlmodelc")
+            }
+
+            if hasLocalModel {
+                // Local model exists - use it without downloading
+                logger.info("✅ Found complete local model at: \(localModelPath.path)")
                 whisperKit = try await WhisperKit(
-                    model: whisperKitModelName,
+                    modelFolder: localModelPath.path,
                     verbose: true,
                     logLevel: .info,
-                    prewarm: true
+                    prewarm: true,
+                    download: false  // Use local model only
                 )
-                logger.info("✅ WhisperKit initialized successfully with model: \(whisperKitModelName)")
-            } catch {
-                logger.warning("⚠️ Failed to initialize with specific model, trying with base model")
-                // Fallback to base model
-                whisperKit = try await WhisperKit(
-                    model: "openai_whisper-base",
-                    verbose: true,
-                    logLevel: .info,
-                    prewarm: true
-                )
-                logger.info("✅ WhisperKit initialized with fallback base model")
+                logger.info("✅ WhisperKit initialized successfully with local model: \(whisperKitModelName)")
+            } else {
+                // No local model - need to download
+                logger.info("⬇️ No local model found, need to download...")
+
+                // CRITICAL FIX: Set environment variable to bypass offline mode detection
+                // This allows download even on cellular/constrained networks
+                logger.info("🔧 Disabling offline mode check for model download...")
+                setenv("CI_DISABLE_NETWORK_MONITOR", "1", 1)
+
+                defer {
+                    // Re-enable network monitoring after download
+                    unsetenv("CI_DISABLE_NETWORK_MONITOR")
+                }
+
+                do {
+                    logger.info("📥 Downloading model: \(whisperKitModelName)...")
+                    logger.info("📍 Expected download location: \(localModelPath.path)")
+                    logger.info("📍 Repository: argmaxinc/whisperkit-coreml")
+
+                    // Use WhisperKit's download method with explicit configuration
+                    let config = WhisperKitConfig(
+                        model: whisperKitModelName,
+                        downloadBase: nil,  // Use default: ~/Documents/huggingface/
+                        modelRepo: "argmaxinc/whisperkit-coreml",
+                        modelFolder: nil,
+                        tokenizerFolder: nil,
+                        computeOptions: nil,
+                        audioProcessor: nil,
+                        featureExtractor: nil,
+                        audioEncoder: nil,
+                        textDecoder: nil,
+                        logitsFilters: nil,
+                        segmentSeeker: nil,
+                        verbose: true,
+                        logLevel: .info,
+                        prewarm: true,
+                        load: true,
+                        download: true,  // Enable download
+                        useBackgroundDownloadSession: false
+                    )
+
+                    whisperKit = try await WhisperKit(config)
+                    logger.info("✅ WhisperKit initialized successfully with downloaded model: \(whisperKitModelName)")
+
+                    // Verify the download completed successfully
+                    if FileManager.default.fileExists(atPath: localModelPath.path) {
+                        logger.info("✅ Verified model saved at: \(localModelPath.path)")
+
+                        // List what was downloaded
+                        if let contents = try? FileManager.default.contentsOfDirectory(atPath: localModelPath.path) {
+                            logger.info("📦 Downloaded model contents:")
+                            for item in contents {
+                                logger.info("   - \(item)")
+                            }
+                        }
+                    } else {
+                        logger.warning("⚠️ Model initialized but not found at expected path: \(localModelPath.path)")
+                    }
+                } catch {
+                    logger.warning("⚠️ Failed to download/initialize model: \(error.localizedDescription)")
+                    logger.warning("⚠️ Trying with fallback base model...")
+
+                    // Fallback to base model
+                    let fallbackConfig = WhisperKitConfig(
+                        model: "openai_whisper-base",
+                        downloadBase: nil,
+                        modelRepo: "argmaxinc/whisperkit-coreml",
+                        modelFolder: nil,
+                        tokenizerFolder: nil,
+                        computeOptions: nil,
+                        audioProcessor: nil,
+                        featureExtractor: nil,
+                        audioEncoder: nil,
+                        textDecoder: nil,
+                        logitsFilters: nil,
+                        segmentSeeker: nil,
+                        verbose: true,
+                        logLevel: .info,
+                        prewarm: true,
+                        load: true,
+                        download: true,
+                        useBackgroundDownloadSession: false
+                    )
+
+                    whisperKit = try await WhisperKit(fallbackConfig)
+                    logger.info("✅ WhisperKit initialized with fallback base model")
+                }
             }
 
             currentModelPath = modelPath ?? "whisper-base"
@@ -73,6 +169,17 @@ public class WhisperKitService: STTService {
         } catch {
             logger.error("❌ Failed to initialize WhisperKit: \(error, privacy: .public)")
             logger.error("Error details: \(error.localizedDescription, privacy: .public)")
+
+            // Provide helpful error message
+            if error.localizedDescription.contains("Repository not available locally") {
+                logger.error("💡 Hint: The model needs to be downloaded but network conditions prevent it.")
+                logger.error("💡 This usually happens on cellular data or low data mode.")
+                logger.error("💡 Suggested solutions:")
+                logger.error("   1. Connect to WiFi (preferred)")
+                logger.error("   2. Disable Low Data Mode in Settings")
+                logger.error("   3. The app has attempted to bypass this restriction")
+            }
+
             throw VoiceError.transcriptionFailed(error)
         }
     }
@@ -269,6 +376,42 @@ public class WhisperKitService: STTService {
             logger.warning("Unknown model ID: \(modelId), defaulting to whisper-base")
             return "openai_whisper-base"
         }
+    }
+
+    /// Get the local path where WhisperKit caches models
+    ///
+    /// **Path Structure:**
+    /// WhisperKit uses the Hub library (swift-transformers) which stores models at:
+    /// `~/Documents/huggingface/models/{repo}/{model-name}/`
+    ///
+    /// **For openai_whisper-base:**
+    /// Full path: `~/Documents/huggingface/models/argmaxinc/whisperkit-coreml/openai_whisper-base/`
+    ///
+    /// **Expected model structure:**
+    /// ```
+    /// openai_whisper-base/
+    /// ├── MelSpectrogram.mlmodelc/
+    /// ├── AudioEncoder.mlmodelc/
+    /// ├── TextDecoder.mlmodelc/
+    /// ├── config.json
+    /// └── generation_config.json
+    /// ```
+    ///
+    /// **Source verification:**
+    /// - Hub library default: HubApi.swift lines 24-31 (~/Documents/huggingface/)
+    /// - Repo path: HubApi.localRepoLocation() appends "models/{repo-id}"
+    /// - This matches WhisperKit's download behavior exactly
+    ///
+    /// - Parameter modelName: The WhisperKit model name (e.g., "openai_whisper-base")
+    /// - Returns: The URL where WhisperKit downloads and caches the model
+    private func getLocalModelPath(for modelName: String) -> URL {
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        return documentsPath
+            .appendingPathComponent("huggingface")
+            .appendingPathComponent("models")
+            .appendingPathComponent("argmaxinc")
+            .appendingPathComponent("whisperkit-coreml")
+            .appendingPathComponent(modelName)
     }
 
     // MARK: - Streaming Support
