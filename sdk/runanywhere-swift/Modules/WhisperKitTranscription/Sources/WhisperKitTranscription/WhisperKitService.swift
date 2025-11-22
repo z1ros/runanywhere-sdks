@@ -37,12 +37,28 @@ public class WhisperKitService: STTService {
         }
 
         do {
-            // Try to initialize WhisperKit with specific model
-            let whisperKitModelName = mapModelIdToWhisperKitName(modelPath ?? "whisper-base")
-            logger.info("Creating WhisperKit instance with model: \(whisperKitModelName)")
+            // Determine if modelPath is a full filesystem path or just a model ID
+            let isFullPath = modelPath?.hasPrefix("/") ?? false ||
+                           modelPath?.contains("/RunAnywhere/Models/WhisperKit/") ?? false
 
-            // Strategy 1: Check if model exists locally
-            let localModelPath = getLocalModelPath(for: whisperKitModelName)
+            let localModelPath: URL
+            let whisperKitModelName: String
+
+            if isFullPath, let pathString = modelPath {
+                // modelPath is already a full path to downloaded model
+                localModelPath = URL(fileURLWithPath: pathString)
+                // Extract model name from path (e.g., "whisper-base" from "/path/to/whisper-base")
+                whisperKitModelName = localModelPath.lastPathComponent
+                logger.info("📍 Using provided full path: \(localModelPath.path)")
+                logger.info("📝 Extracted model name: \(whisperKitModelName)")
+            } else {
+                // modelPath is a model ID - construct the path
+                whisperKitModelName = mapModelIdToWhisperKitName(modelPath ?? "whisper-base")
+                localModelPath = getLocalModelPath(for: whisperKitModelName)
+                logger.info("📍 Constructed path from model ID: \(localModelPath.path)")
+            }
+
+            logger.info("Creating WhisperKit instance with model: \(whisperKitModelName)")
             logger.info("🔍 Checking for local model at: \(localModelPath.path)")
 
             // Check if all required model components exist (matching WhisperKit's loadModels() requirements)
