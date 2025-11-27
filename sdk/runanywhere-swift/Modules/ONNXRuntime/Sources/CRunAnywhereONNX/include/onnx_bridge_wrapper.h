@@ -230,6 +230,78 @@ void ra_sherpa_destroy_stream(ra_sherpa_stream_handle stream);
 void ra_sherpa_destroy_recognizer(ra_sherpa_recognizer_handle recognizer);
 
 //------------------------------------------------------------------------------
+// Sherpa-ONNX TTS Functions (Text-to-Speech using VITS/Piper models)
+//------------------------------------------------------------------------------
+
+// Opaque handle for sherpa-onnx TTS
+typedef void* ra_sherpa_tts_handle;
+
+/**
+ * @brief Create a sherpa-onnx TTS engine for text-to-speech synthesis
+ * @param model_dir Path to directory containing TTS model files (VITS/Piper format)
+ * @param config_json Optional JSON configuration (can be NULL)
+ * @return Handle to TTS engine, or NULL on failure
+ *
+ * Expected model files in model_dir:
+ *   - model.onnx (or *.onnx for the VITS model)
+ *   - tokens.txt
+ *   - Optional: lexicon.txt, espeak-ng-data/
+ */
+ra_sherpa_tts_handle ra_sherpa_tts_create(
+    const char* model_dir,
+    const char* config_json
+);
+
+/**
+ * @brief Get the sample rate of the TTS model
+ * @param tts The TTS handle
+ * @return Sample rate in Hz (e.g., 22050)
+ */
+int ra_sherpa_tts_sample_rate(ra_sherpa_tts_handle tts);
+
+/**
+ * @brief Get the number of speakers supported by the model
+ * @param tts The TTS handle
+ * @return Number of speakers (1 for single-speaker models)
+ */
+int ra_sherpa_tts_num_speakers(ra_sherpa_tts_handle tts);
+
+/**
+ * @brief Synthesize speech from text
+ * @param tts The TTS handle
+ * @param text Text to synthesize
+ * @param speaker_id Speaker ID (0 for single-speaker models)
+ * @param speed Speech speed (1.0 = normal, >1 = faster, <1 = slower)
+ * @param samples Output pointer to float32 audio samples (normalized to [-1, 1])
+ * @param num_samples Output number of samples generated
+ * @param sample_rate Output sample rate of generated audio
+ * @return 0 on success, non-zero on failure
+ *
+ * @note Caller must free the samples array using ra_sherpa_tts_free_samples()
+ */
+int ra_sherpa_tts_generate(
+    ra_sherpa_tts_handle tts,
+    const char* text,
+    int speaker_id,
+    float speed,
+    float** samples,
+    int* num_samples,
+    int* sample_rate
+);
+
+/**
+ * @brief Free audio samples allocated by ra_sherpa_tts_generate
+ * @param samples Pointer to samples array
+ */
+void ra_sherpa_tts_free_samples(float* samples);
+
+/**
+ * @brief Destroy a TTS engine
+ * @param tts The TTS handle
+ */
+void ra_sherpa_tts_destroy(ra_sherpa_tts_handle tts);
+
+//------------------------------------------------------------------------------
 // Archive Extraction Utilities
 //------------------------------------------------------------------------------
 

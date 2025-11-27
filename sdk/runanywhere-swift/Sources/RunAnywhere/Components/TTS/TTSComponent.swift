@@ -415,6 +415,7 @@ public final class TTSComponent: BaseComponent<SystemTTSService>, @unchecked Sen
 
     private let ttsConfiguration: TTSConfiguration
     private var currentVoice: String?
+    private let logger = Logger(subsystem: "com.runanywhere.sdk", category: "TTSComponent")
 
     // MARK: - Initialization
 
@@ -426,16 +427,41 @@ public final class TTSComponent: BaseComponent<SystemTTSService>, @unchecked Sen
 
     // MARK: - Service Creation
 
+    /// Store reference to actual TTS service (may be different from SystemTTSService)
+    private var actualTTSService: TTSService?
+
     public override func createService() async throws -> SystemTTSService {
         // Emit checking event
         eventBus.publish(ComponentInitializationEvent.componentChecking(
             component: Self.componentType,
-            modelId: nil // TTS typically doesn't use model files
+            modelId: ttsConfiguration.voice
         ))
 
+        // Check if there's a registered TTS provider that can handle this voice/model
+        // The voice field contains the model ID for Piper/VITS models
+        let modelId = ttsConfiguration.voice
+
+        if let provider = await ModuleRegistry.shared.ttsProvider(for: modelId) {
+            logger.info("Using registered TTS provider: \(provider.name) for model: \(modelId)")
+
+            // Use the registered provider to create the service
+            let service = try await provider.createTTSService(configuration: ttsConfiguration)
+            self.actualTTSService = service
+
+            // Return a wrapper SystemTTSService that delegates to the actual service
+            // This is a workaround since the component is typed to SystemTTSService
+            // The actual synthesis will be done via actualTTSService
+            let systemService = SystemTTSService()
+            try await systemService.initialize()
+            return systemService
+        }
+
         // Fallback to default adapter (system TTS)
+        logger.info("Using system TTS (no registered provider for: \(modelId))")
         let defaultAdapter = DefaultTTSAdapter()
-        return try await defaultAdapter.createTTSService(configuration: ttsConfiguration)
+        let service = try await defaultAdapter.createTTSService(configuration: ttsConfiguration)
+        self.actualTTSService = service
+        return service
     }
 
     public override func initializeService() async throws {
@@ -482,7 +508,8 @@ public final class TTSComponent: BaseComponent<SystemTTSService>, @unchecked Sen
     public func process(_ input: TTSInput) async throws -> TTSOutput {
         try ensureReady()
 
-        guard let ttsService = service else {
+        // Use actualTTSService if available (from registered provider), otherwise use system service
+        guard let ttsService = actualTTSService ?? service else {
             throw SDKError.componentNotReady("TTS service not available")
         }
 
@@ -507,7 +534,8 @@ public final class TTSComponent: BaseComponent<SystemTTSService>, @unchecked Sen
         // Track processing time
         let startTime = Date()
 
-        // Perform synthesis
+        // Perform synthesis using the actual TTS service
+        logger.info("Synthesizing with service: \(type(of: ttsService))")
         let audioData = try await ttsService.synthesize(text: textToSynthesize, options: options)
 
         let processingTime = Date().timeIntervalSince(startTime)
@@ -575,27 +603,32 @@ public final class TTSComponent: BaseComponent<SystemTTSService>, @unchecked Sen
 
     /// Get available voices
     public func getAvailableVoices() -> [String] {
-        return service?.availableVoices ?? []
+        return actualTTSService?.availableVoices ?? service?.availableVoices ?? []
     }
 
     /// Stop current synthesis
     public func stopSynthesis() {
+        actualTTSService?.stop()
         service?.stop()
     }
 
     /// Check if currently synthesizing
     public var isSynthesizing: Bool {
-        return service?.isSynthesizing ?? false
+        return actualTTSService?.isSynthesizing ?? service?.isSynthesizing ?? false
     }
 
     /// Get service for compatibility
     public func getService() -> TTSService? {
-        return service
+        return actualTTSService ?? service
     }
 
     // MARK: - Cleanup
 
     public override func performCleanup() async throws {
+        actualTTSService?.stop()
+        await actualTTSService?.cleanup()
+        actualTTSService = nil
+
         service?.stop()
         await service?.cleanup()
         currentVoice = nil

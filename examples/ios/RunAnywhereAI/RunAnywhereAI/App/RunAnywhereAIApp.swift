@@ -258,6 +258,7 @@ struct RunAnywhereAIApp: App {
 
             // Register ONNX Runtime with STT and TTS models
             await ONNXServiceProvider.register()
+            await PiperTTSServiceProvider.register()  // Register Piper TTS for VITS/Piper models
             try await RunAnywhere.registerFrameworkAdapter(
                 ONNXAdapter.shared,
                 models: [
