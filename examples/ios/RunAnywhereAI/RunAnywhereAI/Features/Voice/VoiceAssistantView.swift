@@ -218,18 +218,9 @@ struct VoiceAssistantView: View {
             // Show setup view when not all models are loaded
             if !viewModel.allModelsLoaded {
                 VoicePipelineSetupView(
-                    sttModel: Binding(
-                        get: { viewModel.sttModel },
-                        set: { viewModel.sttModel = $0 }
-                    ),
-                    llmModel: Binding(
-                        get: { viewModel.llmModel },
-                        set: { viewModel.llmModel = $0 }
-                    ),
-                    ttsModel: Binding(
-                        get: { viewModel.ttsModel },
-                        set: { viewModel.ttsModel = $0 }
-                    ),
+                    sttModel: viewModel.sttModel,
+                    llmModel: viewModel.llmModel,
+                    ttsModel: viewModel.ttsModel,
                     sttLoadState: viewModel.sttModelState,
                     llmLoadState: viewModel.llmModelState,
                     ttsLoadState: viewModel.ttsModelState,
@@ -452,17 +443,23 @@ struct VoiceAssistantView: View {
         }
         .sheet(isPresented: $showSTTModelSelection) {
             ModelSelectionSheet(context: .stt) { model in
-                viewModel.setSTTModel(model)
+                Task {
+                    await viewModel.setSTTModel(model)
+                }
             }
         }
         .sheet(isPresented: $showLLMModelSelection) {
             ModelSelectionSheet(context: .llm) { model in
-                viewModel.setLLMModel(model)
+                Task {
+                    await viewModel.setLLMModel(model)
+                }
             }
         }
         .sheet(isPresented: $showTTSModelSelection) {
             ModelSelectionSheet(context: .tts) { model in
-                viewModel.setTTSModel(model)
+                Task {
+                    await viewModel.setTTSModel(model)
+                }
             }
         }
         .onAppear {

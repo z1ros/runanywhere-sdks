@@ -495,14 +495,17 @@ struct ModelSelectionSheet: View {
                 loadingProgress = "Model loaded successfully!"
             }
 
-            // Wait a moment to show success message
-            try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+            // Wait a moment to show success message and allow lifecycle tracker to update
+            try await Task.sleep(nanoseconds: 800_000_000) // 0.8 seconds
 
             // Update the shared view model first to ensure state consistency
             await viewModel.selectModel(model)
 
-            // Call the callback with the loaded model
+            // Call the callback with the loaded model - this updates VoiceAssistantViewModel
             await onModelSelected(model)
+
+            // Small delay to ensure all state propagates before dismissing
+            try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
 
             await MainActor.run {
                 dismiss()

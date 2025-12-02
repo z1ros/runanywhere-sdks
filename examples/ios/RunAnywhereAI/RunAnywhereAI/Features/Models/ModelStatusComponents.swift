@@ -185,9 +185,10 @@ struct ModelRequiredOverlay: View {
 
 /// A setup view specifically for Voice Assistant which requires 3 models
 struct VoicePipelineSetupView: View {
-    @Binding var sttModel: (framework: LLMFramework, name: String)?
-    @Binding var llmModel: (framework: LLMFramework, name: String)?
-    @Binding var ttsModel: (framework: LLMFramework, name: String)?
+    // Read-only model state (no bindings to avoid state reset issues)
+    let sttModel: (framework: LLMFramework, name: String, id: String)?
+    let llmModel: (framework: LLMFramework, name: String, id: String)?
+    let ttsModel: (framework: LLMFramework, name: String, id: String)?
 
     // Model loading states from SDK lifecycle tracker
     var sttLoadState: ModelLoadState = .notLoaded

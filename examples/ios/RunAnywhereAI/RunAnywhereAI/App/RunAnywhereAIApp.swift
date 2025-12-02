@@ -73,6 +73,14 @@ struct RunAnywhereAIApp: App {
             // Clear any previous error
             await MainActor.run { initializationError = nil }
 
+            // ONE-TIME CLEANUP: Clear old model selections and database with schema issues
+            // This fixes the "thinkingPattern" column error and old model IDs without -gguf
+            // Only runs once per app installation
+            if !UserDefaults.standard.bool(forKey: "didMigrateToGGUFIds_v1") {
+                clearOldData()
+                UserDefaults.standard.set(true, forKey: "didMigrateToGGUFIds_v1")
+            }
+
             logger.info("🎯 Initializing SDK...")
 
             let startTime = Date()
@@ -164,7 +172,7 @@ struct RunAnywhereAIApp: App {
                     url: "https://huggingface.co/prithivMLmods/SmolLM2-360M-GGUF/resolve/main/SmolLM2-360M.Q8_0.gguf",
                     framework: .llamaCpp,
                     modality: .textToText,
-                    id: "smollm2-360m-q8-0",
+                    id: "smollm2-360m-q8-0-gguf",
                     name: "SmolLM2 360M Q8_0",
                     memoryRequirement: 500_000_000
                 ),
@@ -172,7 +180,7 @@ struct RunAnywhereAIApp: App {
                     url: "https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q4_K_M.gguf",
                     framework: .llamaCpp,
                     modality: .textToText,
-                    id: "llama2-7b-q4-k-m",
+                    id: "llama2-7b-q4-k-m-gguf",
                     name: "Llama 2 7B Chat Q4_K_M",
                     memoryRequirement: 4_000_000_000
                 ),
@@ -180,7 +188,7 @@ struct RunAnywhereAIApp: App {
                     url: "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q4_K_M.gguf",
                     framework: .llamaCpp,
                     modality: .textToText,
-                    id: "mistral-7b-q4-k-m",
+                    id: "mistral-7b-q4-k-m-gguf",
                     name: "Mistral 7B Instruct Q4_K_M",
                     memoryRequirement: 4_000_000_000
                 ),
@@ -188,7 +196,7 @@ struct RunAnywhereAIApp: App {
                     url: "https://huggingface.co/Triangle104/Qwen2.5-0.5B-Instruct-Q6_K-GGUF/resolve/main/qwen2.5-0.5b-instruct-q6_k.gguf",
                     framework: .llamaCpp,
                     modality: .textToText,
-                    id: "qwen-2.5-0.5b-instruct-q6-k",
+                    id: "qwen-2.5-0.5b-instruct-q6-k-gguf",
                     name: "Qwen 2.5 0.5B Instruct Q6_K",
                     memoryRequirement: 600_000_000
                 ),
@@ -196,7 +204,7 @@ struct RunAnywhereAIApp: App {
                     url: "https://huggingface.co/LiquidAI/LFM2-350M-GGUF/resolve/main/LFM2-350M-Q4_K_M.gguf",
                     framework: .llamaCpp,
                     modality: .textToText,
-                    id: "lfm2-350m-q4-k-m",
+                    id: "lfm2-350m-q4-k-m-gguf",
                     name: "LiquidAI LFM2 350M Q4_K_M",
                     memoryRequirement: 250_000_000
                 ),
@@ -204,7 +212,7 @@ struct RunAnywhereAIApp: App {
                     url: "https://huggingface.co/LiquidAI/LFM2-350M-GGUF/resolve/main/LFM2-350M-Q8_0.gguf",
                     framework: .llamaCpp,
                     modality: .textToText,
-                    id: "lfm2-350m-q8-0",
+                    id: "lfm2-350m-q8-0-gguf",
                     name: "LiquidAI LFM2 350M Q8_0",
                     memoryRequirement: 400_000_000
                 )
@@ -329,6 +337,61 @@ struct RunAnywhereAIApp: App {
         #endif
 
         logger.info("🎉 All adapters registered for production")
+    }
+
+    /// One-time cleanup to fix database schema and old model IDs
+    private func clearOldData() {
+        let defaults = UserDefaults.standard
+
+        // Clear all voice model selections (they have old IDs without -gguf suffix)
+        let voiceKeys = [
+            "voiceAssistant.stt.framework", "voiceAssistant.stt.name", "voiceAssistant.stt.id",
+            "voiceAssistant.llm.framework", "voiceAssistant.llm.name", "voiceAssistant.llm.id",
+            "voiceAssistant.tts.framework", "voiceAssistant.tts.name", "voiceAssistant.tts.id"
+        ]
+        for key in voiceKeys {
+            defaults.removeObject(forKey: key)
+        }
+
+        // Migrate model directories from old IDs to new IDs with -gguf suffix
+        let fileManager = FileManager.default
+        if let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let modelsPath = documentsPath.appendingPathComponent("RunAnywhere").appendingPathComponent("Models").appendingPathComponent("llama.cpp")
+
+            // List of models to migrate (old ID -> new ID)
+            let modelMigrations = [
+                "smollm2-360m-q8-0": "smollm2-360m-q8-0-gguf",
+                "llama2-7b-q4-k-m": "llama2-7b-q4-k-m-gguf",
+                "mistral-7b-q4-k-m": "mistral-7b-q4-k-m-gguf",
+                "qwen-2.5-0.5b-instruct-q6-k": "qwen-2.5-0.5b-instruct-q6-k-gguf",
+                "lfm2-350m-q4-k-m": "lfm2-350m-q4-k-m-gguf",
+                "lfm2-350m-q8-0": "lfm2-350m-q8-0-gguf"
+            ]
+
+            for (oldId, newId) in modelMigrations {
+                let oldPath = modelsPath.appendingPathComponent(oldId)
+                let newPath = modelsPath.appendingPathComponent(newId)
+
+                // If old directory exists and new doesn't, rename it
+                if fileManager.fileExists(atPath: oldPath.path) && !fileManager.fileExists(atPath: newPath.path) {
+                    do {
+                        try fileManager.moveItem(at: oldPath, to: newPath)
+                        logger.info("✅ Migrated model directory: \(oldId) -> \(newId)")
+                    } catch {
+                        logger.error("❌ Failed to migrate \(oldId): \(error)")
+                    }
+                }
+            }
+
+            // Delete the database file to fix schema issues (missing thinkingPattern column)
+            let dbPath = documentsPath.appendingPathComponent("RunAnywhere").appendingPathComponent("runanywhere.db")
+            if fileManager.fileExists(atPath: dbPath.path) {
+                try? fileManager.removeItem(at: dbPath)
+                logger.info("🗑️ Deleted old database with schema issues")
+            }
+        }
+
+        logger.info("🧹 Cleared old model selections and migrated model directories")
     }
 }
 
