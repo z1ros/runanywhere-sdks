@@ -69,6 +69,7 @@ actual class ONNXModelStorageStrategy actual constructor() : ModelStorageStrateg
      * Check if the folder contains valid ONNX model storage
      * Supports:
      * - Sherpa-ONNX Whisper structure (encoder.onnx, decoder.onnx, tokens.txt)
+     * - TTS model structure (model.onnx + tokens.txt, may have espeak-ng-data/)
      * - Single .onnx file models
      */
     actual override fun isValidModelStorage(modelFolder: String): Boolean {
@@ -79,7 +80,7 @@ actual class ONNXModelStorageStrategy actual constructor() : ModelStorageStrateg
 
         val files = folder.listFiles()?.map { it.name } ?: return false
 
-        // Check for Sherpa-ONNX Whisper structure
+        // Check for Sherpa-ONNX Whisper structure (STT)
         val hasEncoder = files.any { it.contains("encoder") && it.endsWith(".onnx") }
         val hasDecoder = files.any { it.contains("decoder") && it.endsWith(".onnx") }
         val hasTokens = files.any { it.contains("tokens") && it.endsWith(".txt") }
@@ -88,8 +89,14 @@ actual class ONNXModelStorageStrategy actual constructor() : ModelStorageStrateg
             return true
         }
 
-        // Check for single ONNX model file
+        // Check for TTS model structure (.onnx file + tokens.txt)
+        // TTS models like Piper/KittenTTS have model.onnx (or model.fp16.onnx) + tokens.txt
         val hasOnnxFile = files.any { it.endsWith(".onnx") }
+        if (hasOnnxFile && hasTokens) {
+            return true
+        }
+
+        // Check for single ONNX model file (simple models without tokens.txt)
         return hasOnnxFile
     }
 

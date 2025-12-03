@@ -179,7 +179,9 @@ actual suspend fun synthesizeWithONNX(text: String, options: TTSOptions): ByteAr
 
         // Load the TTS model
         logger.info("Loading TTS model from: $modelPath")
-        service.loadTTSModel(modelPath, "vits")
+        val modelType = detectTTSModelType(modelPath)
+        logger.info("Detected TTS model type: $modelType")
+        service.loadTTSModel(modelPath, modelType)
         logger.info("TTS model loaded successfully")
 
         // Cache for reuse
@@ -306,7 +308,9 @@ actual suspend fun createONNXTTSServiceFromPath(modelPath: String): Any {
 
     val service = ONNXCoreService()
     service.initialize()
-    service.loadTTSModel(modelPath, "vits")
+    val modelType = detectTTSModelType(modelPath)
+    logger.info("Detected TTS model type for service creation: $modelType")
+    service.loadTTSModel(modelPath, modelType)
 
     return ONNXTTSServiceWrapper(service)
 }
@@ -617,6 +621,20 @@ private fun detectSTTModelType(modelPath: String): String {
         lowercased.contains("paraformer") -> "paraformer"
         lowercased.contains("sherpa") -> "zipformer" // Default for sherpa-onnx
         else -> "zipformer" // Default
+    }
+}
+
+/**
+ * Detect TTS model type from path
+ * Supports: Piper (VITS), KittenTTS, and other VITS-based models
+ */
+private fun detectTTSModelType(modelPath: String): String {
+    val lowercased = modelPath.lowercase()
+    return when {
+        lowercased.contains("kitten") -> "kitten" // KittenTTS models
+        lowercased.contains("piper") -> "vits" // Piper uses VITS config
+        lowercased.contains("vits") -> "vits" // VITS models
+        else -> "vits" // Default to VITS (most common, works for Piper and KittenTTS)
     }
 }
 

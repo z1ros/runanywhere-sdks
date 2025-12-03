@@ -49,6 +49,16 @@ class RunAnywhereApplication : Application() {
             initializationError = null
             Log.i("RunAnywhereApp", "🎯 Starting SDK initialization...")
 
+            // Initialize native library loader FIRST before any SDK operations
+            // This is critical for ONNX Runtime to load with RTLD_GLOBAL for symbol visibility
+            try {
+                val nativeLibDir = applicationInfo.nativeLibraryDir
+                com.runanywhere.sdk.native.bridge.RunAnywhereBridge.setNativeLibraryDir(nativeLibDir)
+                Log.i("RunAnywhereApp", "✅ Native library directory set: $nativeLibDir")
+            } catch (e: Exception) {
+                Log.w("RunAnywhereApp", "⚠️ Failed to set native library directory: ${e.message}")
+            }
+
             val startTime = System.currentTimeMillis()
 
             // Determine environment (matches iOS pattern)
@@ -258,6 +268,16 @@ class RunAnywhereApplication : Application() {
                     modality = FrameworkModality.TEXT_TO_VOICE,
                     format = ModelFormat.ONNX,
                     memoryRequirement = 65_000_000L
+                ),
+                // KittenTTS - Nano English v0.2 (~15MB) - Lightweight TTS model
+                ModelRegistration(
+                    id = "kitten-nano-en-v0_2-fp16",
+                    name = "KittenTTS Nano (English)",
+                    url = "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kitten-nano-en-v0_2-fp16.tar.bz2",
+                    framework = LLMFramework.ONNX,
+                    modality = FrameworkModality.TEXT_TO_VOICE,
+                    format = ModelFormat.ONNX,
+                    memoryRequirement = 15_000_000L
                 )
             )
         )
@@ -408,6 +428,16 @@ class RunAnywhereApplication : Application() {
                     modality = FrameworkModality.TEXT_TO_VOICE,
                     format = ModelFormat.ONNX,
                     memoryRequirement = 65_000_000L
+                ),
+                // KittenTTS - Nano English v0.2 (~15MB) - Lightweight TTS model
+                ModelRegistration(
+                    id = "kitten-nano-en-v0_2-fp16",
+                    name = "KittenTTS Nano (English)",
+                    url = "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kitten-nano-en-v0_2-fp16.tar.bz2",
+                    framework = LLMFramework.ONNX,
+                    modality = FrameworkModality.TEXT_TO_VOICE,
+                    format = ModelFormat.ONNX,
+                    memoryRequirement = 15_000_000L
                 )
             )
         )

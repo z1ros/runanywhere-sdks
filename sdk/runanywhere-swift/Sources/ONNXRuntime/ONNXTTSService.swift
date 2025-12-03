@@ -387,6 +387,12 @@ public struct ONNXTTSServiceProvider: TTSServiceProvider {
             return true
         }
 
+        // Handle KittenTTS models
+        if lowercased.contains("kitten") {
+            Self.logger.debug("Model \(modelId) matches KittenTTS pattern")
+            return true
+        }
+
         // Handle generic ONNX TTS models
         if lowercased.contains("tts") && lowercased.contains("onnx") {
             Self.logger.debug("Model \(modelId) matches ONNX TTS pattern")

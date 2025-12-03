@@ -281,10 +281,90 @@ val downloadNativeLibs by tasks.registering {
     }
 }
 
-// Make preBuild depend on download task when not using local build
+/**
+ * Task to add missing OpenMP library (libomp.so) if not present
+ */
+val addOpenMPLibrary by tasks.registering {
+    description = "Adds OpenMP library (libomp.so) from Android NDK if missing"
+    group = "build setup"
+
+    dependsOn(downloadNativeLibs)
+
+    doLast {
+        val ompLib = file("$jniLibsDir/arm64-v8a/libomp.so")
+
+        // Skip if libomp.so already exists
+        if (ompLib.exists()) {
+            logger.lifecycle("OpenMP library already present")
+            return@doLast
+        }
+
+        logger.lifecycle("Adding missing OpenMP library...")
+
+        // Try to find libomp.so in Android NDK
+        val androidHome = System.getenv("ANDROID_HOME") ?: System.getenv("ANDROID_SDK_ROOT")
+        if (androidHome == null) {
+            logger.warn("⚠️  ANDROID_HOME not set, skipping OpenMP library")
+            return@doLast
+        }
+
+        val ndkDir = file("$androidHome/ndk")
+        if (!ndkDir.exists()) {
+            logger.warn("⚠️  NDK directory not found at: $ndkDir")
+            return@doLast
+        }
+
+        // Find the latest NDK version
+        val ndkVersions = ndkDir.listFiles()?.filter { it.isDirectory }?.sortedDescending()
+        if (ndkVersions.isNullOrEmpty()) {
+            logger.warn("⚠️  No NDK versions found in: $ndkDir")
+            return@doLast
+        }
+
+        // Look for libomp.so in each NDK version
+        for (ndkVersion in ndkVersions) {
+            // Try different possible paths for libomp.so
+            val possiblePaths = listOf(
+                // NDK r25 and older
+                "toolchains/llvm/prebuilt/darwin-x86_64/lib64/clang/14.0.6/lib/linux/aarch64/libomp.so",
+                "toolchains/llvm/prebuilt/darwin-x86_64/lib/clang/14/lib/linux/aarch64/libomp.so",
+                // NDK r26+
+                "toolchains/llvm/prebuilt/darwin-x86_64/lib/clang/17/lib/linux/aarch64/libomp.so",
+                // NDK r27+
+                "toolchains/llvm/prebuilt/darwin-x86_64/lib/clang/18/lib/linux/aarch64/libomp.so",
+                // Linux host
+                "toolchains/llvm/prebuilt/linux-x86_64/lib64/clang/14.0.6/lib/linux/aarch64/libomp.so",
+                "toolchains/llvm/prebuilt/linux-x86_64/lib/clang/14/lib/linux/aarch64/libomp.so",
+                "toolchains/llvm/prebuilt/linux-x86_64/lib/clang/17/lib/linux/aarch64/libomp.so",
+                "toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/aarch64/libomp.so"
+            )
+
+            for (path in possiblePaths) {
+                val sourceOmpLib = file("${ndkVersion.absolutePath}/$path")
+                if (sourceOmpLib.exists()) {
+                    logger.lifecycle("Found OpenMP library in NDK ${ndkVersion.name}")
+                    logger.lifecycle("  Source: ${sourceOmpLib.absolutePath}")
+
+                    // Ensure target directory exists
+                    ompLib.parentFile.mkdirs()
+
+                    // Copy libomp.so to jniLibs
+                    sourceOmpLib.copyTo(ompLib, overwrite = true)
+                    logger.lifecycle("✅ Added OpenMP library: ${ompLib.name} (${ompLib.length() / 1024}KB)")
+                    return@doLast
+                }
+            }
+        }
+
+        logger.warn("⚠️  Could not find libomp.so in any NDK version")
+        logger.warn("   TTS features may not work properly without OpenMP")
+    }
+}
+
+// Make preBuild depend on download task and OpenMP task when not using local build
 if (!useLocalBuild) {
     tasks.matching { it.name == "preBuild" }.configureEach {
-        dependsOn(downloadNativeLibs)
+        dependsOn(downloadNativeLibs, addOpenMPLibrary)
     }
 }
 

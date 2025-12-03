@@ -38,6 +38,24 @@ class ONNXCoreService : NativeCoreService {
     private val mutex = Mutex()
 
     init {
+        // Initialize native library directory for RunAnywhereLoader
+        // This enables proper RTLD_GLOBAL loading for symbol visibility
+        try {
+            // Get Android application context
+            val contextClass = Class.forName("android.app.ActivityThread")
+            val currentApplication = contextClass.getMethod("currentApplication").invoke(null)
+            if (currentApplication != null) {
+                val appInfo = currentApplication.javaClass.getMethod("getApplicationInfo").invoke(currentApplication)
+                val nativeLibDir = appInfo?.javaClass?.getField("nativeLibraryDir")?.get(appInfo) as? String
+                if (nativeLibDir != null) {
+                    RunAnywhereBridge.setNativeLibraryDir(nativeLibDir)
+                }
+            }
+        } catch (e: Exception) {
+            // If we can't get the context, loader won't be initialized
+            // but libraries will still load (just without RTLD_GLOBAL)
+        }
+
         // Load JNI bridge and ONNX backend libraries on construction
         RunAnywhereBridge.loadLibrary()
         RunAnywhereBridge.loadBackend("onnx")

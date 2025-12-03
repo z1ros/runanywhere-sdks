@@ -221,16 +221,35 @@ actual fun findONNXModelPath(modelId: String, folder: String): String? {
         return (hasEncoder && hasDecoder) || hasTokens
     }
 
+    // Helper to check if a directory contains TTS model structure (model.onnx + tokens.txt)
+    fun isTTSModelDir(dir: File): Boolean {
+        val files = dir.listFiles() ?: return false
+        val hasOnnx = files.any { it.extension == "onnx" }
+        val hasTokens = files.any { it.name.contains("tokens") && it.extension == "txt" }
+        // TTS models have .onnx file + tokens.txt (may also have espeak-ng-data directory)
+        return hasOnnx && hasTokens
+    }
+
     // Check if current folder is a sherpa-onnx model directory
     if (isSherpaOnnxModelDir(folderFile)) {
         logger.debug("Found sherpa-onnx model directory: ${folderFile.absolutePath}")
         return folderFile.absolutePath
     }
 
-    // Check current folder for single .onnx file (simple models)
-    folderFile.listFiles()?.forEach { file ->
-        if (file.isFile && file.extension.lowercase() == "onnx") {
-            return file.absolutePath
+    // Check if current folder is a TTS model directory (return directory, not file)
+    if (isTTSModelDir(folderFile)) {
+        logger.debug("Found TTS model directory: ${folderFile.absolutePath}")
+        return folderFile.absolutePath
+    }
+
+    // Check current folder for single .onnx file (simple models - return file path)
+    // Only return file path if there's no tokens.txt (not a TTS model)
+    val hasTokensInCurrent = folderFile.listFiles()?.any { it.name.contains("tokens") && it.extension == "txt" } == true
+    if (!hasTokensInCurrent) {
+        folderFile.listFiles()?.forEach { file ->
+            if (file.isFile && file.extension.lowercase() == "onnx") {
+                return file.absolutePath
+            }
         }
     }
 
@@ -242,10 +261,19 @@ actual fun findONNXModelPath(modelId: String, folder: String): String? {
             return subDir.absolutePath
         }
 
-        // Check for single .onnx file
-        subDir.listFiles()?.forEach { file ->
-            if (file.isFile && file.extension.lowercase() == "onnx") {
-                return file.absolutePath
+        // Check if this subdirectory is a TTS model directory
+        if (isTTSModelDir(subDir)) {
+            logger.debug("Found TTS model directory in subdir: ${subDir.absolutePath}")
+            return subDir.absolutePath
+        }
+
+        // Check for single .onnx file (only if not a TTS model)
+        val hasTokensInSub = subDir.listFiles()?.any { it.name.contains("tokens") && it.extension == "txt" } == true
+        if (!hasTokensInSub) {
+            subDir.listFiles()?.forEach { file ->
+                if (file.isFile && file.extension.lowercase() == "onnx") {
+                    return file.absolutePath
+                }
             }
         }
 
@@ -256,9 +284,18 @@ actual fun findONNXModelPath(modelId: String, folder: String): String? {
                 return subSubDir.absolutePath
             }
 
-            subSubDir.listFiles()?.forEach { file ->
-                if (file.isFile && file.extension.lowercase() == "onnx") {
-                    return file.absolutePath
+            if (isTTSModelDir(subSubDir)) {
+                logger.debug("Found TTS model directory (level 2): ${subSubDir.absolutePath}")
+                return subSubDir.absolutePath
+            }
+
+            // Check for single .onnx file (only if not a TTS model)
+            val hasTokensInSubSub = subSubDir.listFiles()?.any { it.name.contains("tokens") && it.extension == "txt" } == true
+            if (!hasTokensInSubSub) {
+                subSubDir.listFiles()?.forEach { file ->
+                    if (file.isFile && file.extension.lowercase() == "onnx") {
+                        return file.absolutePath
+                    }
                 }
             }
         }

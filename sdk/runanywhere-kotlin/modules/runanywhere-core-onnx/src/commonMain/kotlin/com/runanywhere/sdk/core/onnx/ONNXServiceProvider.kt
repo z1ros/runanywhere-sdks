@@ -105,6 +105,7 @@ class ONNXTTSServiceProvider : TTSServiceProvider {
         // Pattern matching for ONNX TTS models
         return lowercased.contains("piper") ||
                 lowercased.contains("vits") ||
+                lowercased.contains("kitten") ||
                 lowercased.contains("sherpa-onnx") && lowercased.contains("tts") ||
                 (lowercased.contains("tts") && lowercased.contains("onnx"))
     }

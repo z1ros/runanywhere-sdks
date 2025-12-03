@@ -117,6 +117,9 @@ object RunAnywhereBridge {
      * Pre-load ONNX libraries with RTLD_GLOBAL flag.
      * This makes symbols like OrtGetApiBase globally visible so that
      * libsherpa-onnx-c-api.so can find them when loaded as a transitive dependency.
+     *
+     * Uses RunAnywhereLoader.loadOnnxLibraries() which loads all ONNX libraries
+     * in the correct dependency order with RTLD_GLOBAL.
      */
     private fun preloadOnnxLibrariesWithGlobal() {
         if (!loaderInitialized) return
@@ -127,26 +130,18 @@ object RunAnywhereBridge {
             return
         }
 
-        logI(TAG, "Pre-loading ONNX libraries with RTLD_GLOBAL...")
+        logI(TAG, "Pre-loading all ONNX libraries with RTLD_GLOBAL...")
 
-        // Load onnxruntime with RTLD_GLOBAL - this is the critical step!
-        // RTLD_GLOBAL makes OrtGetApiBase and other symbols available to
-        // subsequently loaded libraries like libsherpa-onnx-c-api.so
-        val onnxLoaded = RunAnywhereLoader.loadLibraryGlobal("onnxruntime")
-        if (onnxLoaded) {
-            logI(TAG, "Successfully loaded libonnxruntime.so with RTLD_GLOBAL")
+        // Use the comprehensive loader that handles all libraries in correct order:
+        // 1. libonnxruntime.so (RTLD_GLOBAL)
+        // 2. libsherpa-onnx-c-api.so (RTLD_GLOBAL)
+        // 3. librunanywhere_bridge.so (RTLD_GLOBAL)
+        // 4. librunanywhere_onnx.so (RTLD_GLOBAL)
+        val success = RunAnywhereLoader.loadOnnxLibraries()
+        if (success) {
+            logI(TAG, "✅ All ONNX libraries loaded successfully with RTLD_GLOBAL")
         } else {
-            logE(TAG, "Failed to load libonnxruntime.so with RTLD_GLOBAL")
-        }
-
-        // Load sherpa-onnx-c-api if present (needs onnxruntime symbols)
-        if (RunAnywhereLoader.hasLibrary("sherpa-onnx-c-api")) {
-            val sherpaLoaded = RunAnywhereLoader.loadLibraryGlobal("sherpa-onnx-c-api")
-            if (sherpaLoaded) {
-                logI(TAG, "Successfully loaded libsherpa-onnx-c-api.so with RTLD_GLOBAL")
-            } else {
-                logE(TAG, "Failed to load libsherpa-onnx-c-api.so with RTLD_GLOBAL")
-            }
+            logE(TAG, "❌ Failed to load ONNX libraries with RTLD_GLOBAL")
         }
     }
 
@@ -236,14 +231,12 @@ object RunAnywhereBridge {
                     return loaded
                 }
 
-                // Fallback to JNI native function (may not work on Android due to path issues)
-                val loaded = nativeLoadLibraryWithGlobal(name)
-                if (loaded) {
-                    logI(TAG, "Successfully loaded: lib$name.so with RTLD_GLOBAL")
-                } else {
-                    logE(TAG, "Failed to load lib$name.so with RTLD_GLOBAL")
-                }
-                loaded
+                // Fallback: If loader not available, load normally without RTLD_GLOBAL
+                // Note: This may cause symbol visibility issues, but is better than crashing
+                logE(TAG, "Loader not initialized, loading lib$name.so without RTLD_GLOBAL")
+                System.loadLibrary(name)
+                logI(TAG, "Successfully loaded: lib$name.so (without RTLD_GLOBAL)")
+                true
             } else {
                 System.loadLibrary(name)
                 logI(TAG, "Successfully loaded: lib$name.so")
