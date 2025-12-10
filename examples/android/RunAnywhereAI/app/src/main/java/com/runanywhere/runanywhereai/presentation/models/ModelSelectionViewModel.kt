@@ -10,9 +10,12 @@ import com.runanywhere.sdk.models.collectDeviceInfo
 import com.runanywhere.sdk.models.enums.LLMFramework
 import com.runanywhere.sdk.models.enums.ModelSelectionContext
 import com.runanywhere.sdk.models.enums.supportedModalities
+import com.runanywhere.runanywhereai.RunAnywhereApplication
+import com.runanywhere.runanywhereai.SDKInitializationState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -31,7 +34,52 @@ class ModelSelectionViewModel(
 
     init {
         loadDeviceInfo()
-        loadModelsAndFrameworks()
+        // Wait for SDK initialization before loading models/frameworks
+        // This fixes the race condition where UI queries ModuleRegistry before adapters are registered
+        waitForSDKAndLoadModels()
+    }
+
+    /**
+     * Wait for SDK initialization to complete before loading models and frameworks.
+     * This fixes the race condition where the UI would query ModuleRegistry
+     * before framework adapters were registered (~300-500ms after app launch).
+     */
+    private fun waitForSDKAndLoadModels() {
+        viewModelScope.launch {
+            try {
+                val app = RunAnywhereApplication.getInstance()
+                android.util.Log.d("ModelSelectionVM", "⏳ Waiting for SDK initialization...")
+
+                // Collect the initialization state and wait for Ready or Error
+                app.initializationState.collect { state ->
+                    when (state) {
+                        is SDKInitializationState.Ready -> {
+                            android.util.Log.d("ModelSelectionVM", "✅ SDK initialized, loading models...")
+                            loadModelsAndFrameworks()
+                            return@collect // Stop collecting after first Ready
+                        }
+                        is SDKInitializationState.Loading -> {
+                            android.util.Log.d("ModelSelectionVM", "⏳ SDK still initializing...")
+                            // Keep waiting
+                        }
+                        is SDKInitializationState.Error -> {
+                            android.util.Log.e("ModelSelectionVM", "❌ SDK initialization failed: ${state.error.message}")
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    error = "SDK initialization failed. Please restart the app."
+                                )
+                            }
+                            return@collect // Stop collecting on error
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("ModelSelectionVM", "❌ Error waiting for SDK: ${e.message}", e)
+                // Fallback: try loading anyway in case SDK is already initialized
+                loadModelsAndFrameworks()
+            }
+        }
     }
 
     private fun loadDeviceInfo() {
