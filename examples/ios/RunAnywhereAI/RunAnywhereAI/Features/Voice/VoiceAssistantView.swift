@@ -14,6 +14,23 @@ struct VoiceAssistantView: View {
     @State private var showSTTModelSelection = false
     @State private var showLLMModelSelection = false
     @State private var showTTSModelSelection = false
+    
+    // Manual athlete demo mode
+    @State private var showAthleteDemo = false
+    
+    /// Whether to show New Year themed elements
+    private var isNewYearMode: Bool {
+        let calendar = Calendar.current
+        let now = Date()
+        let month = calendar.component(.month, from: now)
+        let day = calendar.component(.day, from: now)
+        return (month == 12 && day >= 25) || (month == 1 && day <= 15)
+    }
+    
+    /// Whether the athlete should be running
+    private var isAthleteRunning: Bool {
+        viewModel.sessionState == .speaking || showAthleteDemo
+    }
 
     var body: some View {
         Group {
@@ -127,6 +144,52 @@ struct VoiceAssistantView: View {
 
             // Control area
             VStack(spacing: 20) {
+                // 🏃 RUN BUTTON - Manual athlete trigger (macOS)
+                Button(action: {
+                    withAnimation(.spring(response: 0.4)) {
+                        showAthleteDemo.toggle()
+                    }
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: showAthleteDemo ? "stop.fill" : "figure.run")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text(showAthleteDemo ? "Stop" : "Run!")
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(showAthleteDemo ? Color.red : AppColors.primaryAccent)
+                    )
+                }
+                .buttonStyle(.plain)
+                
+                // Running Athlete Animation - shows when TTS is speaking OR demo mode!
+                if isAthleteRunning {
+                    VStack(spacing: 8) {
+                        RunningAthleteView(
+                            isRunning: true,
+                            showNewYearTheme: isNewYearMode
+                        )
+                        .frame(height: 100)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                        )
+                        .padding(.horizontal, 20)
+                        
+                        // New Year Banner during season
+                        if isNewYearMode {
+                            NewYearBanner(isVisible: true)
+                                .padding(.horizontal, 20)
+                        }
+                    }
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .animation(.spring(response: 0.4), value: isAthleteRunning)
+                }
+                
                 // Error message (if any)
                 if let error = viewModel.errorMessage {
                     Text(error)
@@ -318,6 +381,51 @@ struct VoiceAssistantView: View {
 
                     // Minimal control area
                     VStack(spacing: 20) {
+                        // 🏃 RUN BUTTON - Manual athlete trigger
+                        Button(action: {
+                            withAnimation(.spring(response: 0.4)) {
+                                showAthleteDemo.toggle()
+                            }
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: showAthleteDemo ? "stop.fill" : "figure.run")
+                                    .font(.system(size: 14, weight: .semibold))
+                                Text(showAthleteDemo ? "Stop" : "Run!")
+                                    .font(.system(size: 13, weight: .semibold))
+                            }
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(
+                                Capsule()
+                                    .fill(showAthleteDemo ? Color.red : AppColors.primaryAccent)
+                            )
+                        }
+                        
+                        // Running Athlete Animation - shows when TTS is speaking OR demo mode!
+                        if isAthleteRunning {
+                            VStack(spacing: 8) {
+                                RunningAthleteView(
+                                    isRunning: true,
+                                    showNewYearTheme: isNewYearMode
+                                )
+                                .frame(height: 100)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(AppColors.backgroundSecondary.opacity(0.5))
+                                )
+                                .padding(.horizontal, 20)
+                                
+                                // New Year Banner during season
+                                if isNewYearMode {
+                                    NewYearBanner(isVisible: true)
+                                        .padding(.horizontal, 20)
+                                }
+                            }
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                            .animation(.spring(response: 0.4), value: isAthleteRunning)
+                        }
+                        
                         // Error message (if any)
                         if let error = viewModel.errorMessage {
                             Text(error)

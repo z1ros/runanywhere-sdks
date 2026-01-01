@@ -47,157 +47,206 @@ private let sampleTTSTexts: [String] = [
     "The future of AI is local. Welcome to the future."
 ]
 
+/// Special New Year 2026 themed texts - festive and viral-worthy!
+private let newYearTTSTexts: [String] = [
+    // Festive New Year wishes
+    "Happy New Year twenty twenty-six! May your code compile on the first try and your bugs fix themselves!",
+    "Twenty twenty-six is here! Time to run anywhere, dream everywhere, and achieve everything!",
+    "New Year, new AI! RunAnywhere wishes you a twenty twenty-six full of innovation and success!",
+    "Cheers to twenty twenty-six! May your AI be smart, your data be private, and your apps run anywhere!",
+    "Happy twenty twenty-six from RunAnywhere! Like our AI, may you run faster, think smarter, and go further this year!",
+    
+    // Motivational RunAnywhere themed
+    "In twenty twenty-six, be like RunAnywhere AI: powerful, private, and unstoppable wherever you go!",
+    "New Year resolution: Run anywhere, compute everywhere, stop nowhere! Happy twenty twenty-six!",
+    "Twenty twenty-six: The year your AI runs offline, your dreams run wild, and limitations run away!",
+    "From all of us at RunAnywhere: May twenty twenty-six bring you AI that thinks as fast as your ambitions!",
+    "This year, let's run anywhere together! Happy New Year twenty twenty-six!",
+    
+    // Fun and shareable
+    "My AI resolution for twenty twenty-six? To keep running even when WiFi can't keep up!",
+    "Twenty twenty-six prediction: On-device AI takes over the world. Privacy cheers. Cloud bills cry.",
+    "Roses are red, the new year is near, RunAnywhere AI will make twenty twenty-six your best year!",
+    "Plot twist of twenty twenty-six: Your phone becomes smarter than your smart fridge. Happy New Year!",
+    "Welcome to twenty twenty-six, where AI runs locally and your resolutions... well, let's see!",
+    
+    // Inspirational
+    "Twenty twenty-six: A fresh start, a new chapter, and AI that runs anywhere you dream to go!",
+    "The best time to start was yesterday. The next best time is January first, twenty twenty-six!",
+    "In twenty twenty-six, may your latency be low and your intelligence be high! Happy New Year!",
+    "Here's to twenty twenty-six: May your neural networks be deep and your happy moments deeper!",
+    "New year energy: Run anywhere, compute everywhere, and never let buffering slow you down!"
+]
+
+/// Check if it's New Year season (late December to early January)
+private func isNewYearSeason() -> Bool {
+    let calendar = Calendar.current
+    let now = Date()
+    let month = calendar.component(.month, from: now)
+    let day = calendar.component(.day, from: now)
+    
+    // December 25-31 or January 1-15
+    return (month == 12 && day >= 25) || (month == 1 && day <= 15)
+}
+
+/// Get a random TTS text, with preference for New Year texts during the season
+private func getRandomTTSText() -> String {
+    if isNewYearSeason() {
+        // 70% chance of New Year text during the season
+        if Double.random(in: 0...1) < 0.7 {
+            return newYearTTSTexts.randomElement() ?? sampleTTSTexts.randomElement() ?? "Hello!"
+        }
+    }
+    return sampleTTSTexts.randomElement() ?? "Hello!"
+}
+
+/// The official RunAnywhere New Year greeting message - ONE consistent message
+private let newYearGreetingMessage = "Happy New Year 2026 from RunAnywhere! Wishing you a year of innovation, success, and AI that runs anywhere you dream to go!"
+
 /// Dedicated Text-to-Speech view with text input and playback
 struct TextToSpeechView: View {
     @StateObject private var viewModel = TTSViewModel()
     @State private var showModelPicker = false
-    @State private var inputText: String = sampleTTSTexts.randomElement()
-        ?? "Hello! Welcome to text to speech."
+    @State private var inputText: String = isNewYearSeason() ? newYearGreetingMessage : (sampleTTSTexts.randomElement() ?? "Hello!")
+    @State private var showCelebration = false // Full-screen celebration when TTS completes
+    @State private var wasActuallySpeaking = false // Track when audio was actually playing (not just generating)
 
     private var hasModelSelected: Bool {
         viewModel.selectedModelName != nil
     }
+    
+    /// Whether to show New Year themed elements
+    private var isNewYearMode: Bool {
+        isNewYearSeason()
+    }
+    
+    /// Whether the athlete should be running (TTS active)
+    private var isAthleteRunning: Bool {
+        viewModel.isGenerating || viewModel.isPlaying
+    }
 
     var body: some View {
         ZStack {
+            // Main content - fireworks only shown in celebration overlay after TTS completes
             VStack(spacing: 0) {
-                // Header with title
-                HStack {
-                    Text("Text to Speech")
-                        .font(.title2)
-                        .fontWeight(.bold)
-
-                    Spacer()
-                }
-                .padding(.horizontal)
-                .padding(.top)
-
-                // Model Status Banner - Always visible
-                ModelStatusBanner(
-                    framework: viewModel.selectedFramework,
-                    modelName: viewModel.selectedModelName,
-                    isLoading: viewModel.isGenerating && viewModel.selectedModelName == nil,
-                    onSelectModel: { showModelPicker = true }
-                )
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-
-                Divider()
-
-                // Main content - only enabled when model is selected
-                if hasModelSelected {
-
-            // Input and output area
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    // Text input section
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Enter Text")
-                            .font(.headline)
+                // Model selector (centered, compact)
+                Button(action: { showModelPicker = true }) {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(viewModel.selectedModelName != nil ? Color.green : Color.gray)
+                            .frame(width: 8, height: 8)
+                        
+                        Text(viewModel.selectedModelName ?? "Select Voice Model")
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.primary)
-
-                        TextEditor(text: $inputText)
-                            .font(.body)
-                            .padding(12)
-                            .frame(minHeight: 120)
-                            #if os(iOS)
-                            .background(Color(.secondarySystemBackground))
-                            #else
-                            .background(Color(NSColor.controlBackgroundColor))
-                            #endif
-                            .cornerRadius(12)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                            )
-
-                        HStack {
-                            Text("\(inputText.count) characters")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-
-                            Spacer()
-
-                            Button {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    inputText = sampleTTSTexts.randomElement() ?? inputText
-                                }
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "dice.fill")
-                                    Text("Surprise me!")
-                                }
-                                .font(.caption)
-                                .foregroundColor(AppColors.primaryAccent)
-                            }
-                        }
-                    }
-
-                    // Voice settings
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Voice Settings")
-                            .font(.headline)
-                            .foregroundColor(.primary)
-
-                        // Speech rate
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Text("Speed")
-                                    .font(.subheadline)
-                                Spacer()
-                                Text(String(format: "%.1fx", viewModel.speechRate))
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                            Slider(value: $viewModel.speechRate, in: 0.5...2.0, step: 0.1)
-                                .tint(AppColors.primaryAccent)
-                        }
-
-                        // Pitch
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Text("Pitch")
-                                    .font(.subheadline)
-                                Spacer()
-                                Text(String(format: "%.1fx", viewModel.pitch))
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                            Slider(value: $viewModel.pitch, in: 0.5...2.0, step: 0.1)
-                                .tint(AppColors.primaryPurple)
-                        }
-                    }
-                    .padding()
-                    .background(AppColors.backgroundTertiary)
-                    .cornerRadius(12)
-
-                    // Generated audio info
-                    if let metadata = viewModel.metadata {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Audio Info")
-                                .font(.headline)
-                                .foregroundColor(.primary)
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                metadataRow(icon: "waveform", label: "Duration", value: String(format: "%.2fs", metadata.durationMs / 1000))
-                                metadataRow(icon: "doc.text", label: "Size", value: formatBytes(metadata.audioSize))
-                                metadataRow(icon: "speaker.wave.2", label: "Sample Rate", value: "\(metadata.sampleRate) Hz")
-                            }
-                            .font(.caption)
+                            .lineLimit(1)
+                        
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 12))
                             .foregroundColor(.secondary)
-                        }
-                        .padding()
-                        .background(AppColors.backgroundSecondary)
-                        .cornerRadius(12)
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(AppColors.backgroundSecondary)
+                    .cornerRadius(20)
                 }
-                .padding()
-            }
+                .padding(.top, 16)
 
-            Divider()
+                // Main content
+                if hasModelSelected {
+                    
+                    Spacer()
+                    
+                    // 🎆 CENTERED NEW YEAR EXPERIENCE
+                    VStack(spacing: 16) {
+                        
+                        // BIG CENTERED TITLE
+                        VStack(spacing: 6) {
+                            if isNewYearMode {
+                                Text("🎆 Happy New Year! 🎇")
+                                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [Color(hex: 0xFFD700), AppColors.primaryAccent],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                                
+                                Text("2026")
+                                    .font(.system(size: 44, weight: .black, design: .rounded))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [AppColors.primaryAccent, Color(hex: 0xFFD700)],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
+                                    )
+                                
+                                Text("from RunAnywhere")
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundColor(.secondary)
+                            } else {
+                                Text("Text to Speech")
+                                    .font(.title)
+                                    .fontWeight(.bold)
+                            }
+                        }
+                        .padding(.bottom, 8)
+                        
+                        // Athlete Card - with more space!
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(Color(hex: 0x111111))
+                            
+                            RunningAthleteView(
+                                isRunning: isAthleteRunning,
+                                showNewYearTheme: isNewYearMode
+                            )
+                        }
+                        .frame(height: 160) // More height for the athlete!
+                        .padding(.horizontal, 20)
+                        
+                        // Message text - PROPERLY WRAPPED in a constrained container
+                        VStack(spacing: 14) {
+                            // Use GeometryReader to constrain width properly
+                            Text(inputText)
+                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .foregroundColor(isAthleteRunning ? AppColors.primaryAccent : .primary)
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(4)
+                                .padding(.horizontal, 16)
+                                .frame(maxWidth: UIScreen.main.bounds.width - 80) // Constrain to screen width minus padding
+                                .animation(.easeInOut, value: isAthleteRunning)
+                            
+                            // Shuffle button (only shown when NOT in New Year mode and NOT speaking)
+                            if !isAthleteRunning && !isNewYearMode {
+                                Button {
+                                    withAnimation {
+                                        inputText = getRandomTTSText()
+                                    }
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "shuffle")
+                                        Text("Different Message")
+                                    }
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 10)
+                                    .background(AppColors.primaryAccent.opacity(0.8))
+                                    .cornerRadius(20)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    
+                    Spacer()
 
-            // Controls
-            VStack(spacing: 16) {
+            // Bottom controls
+            VStack(spacing: 12) {
+                
                 // Error message
                 if let error = viewModel.errorMessage {
                     Text(error)
@@ -301,6 +350,13 @@ struct TextToSpeechView: View {
                     onSelectModel: { showModelPicker = true }
                 )
             }
+            
+            // 🎉 FULL-SCREEN CELEBRATION when TTS completes!
+            if showCelebration && isNewYearMode {
+                CelebrationOverlay(isShowing: $showCelebration)
+                    .transition(.opacity)
+                    .zIndex(100)
+            }
         }
         .sheet(isPresented: $showModelPicker) {
             ModelSelectionSheet(context: .tts) { model in
@@ -315,9 +371,35 @@ struct TextToSpeechView: View {
             }
         }
         .onChange(of: viewModel.selectedModelName) { oldValue, newValue in
-            // Set a new random funny text when a model is loaded
+            // Set text when a model is loaded
             if oldValue == nil && newValue != nil {
-                inputText = sampleTTSTexts.randomElement() ?? inputText
+                // During New Year mode, always use the official greeting
+                inputText = isNewYearMode ? newYearGreetingMessage : getRandomTTSText()
+            }
+        }
+        .onChange(of: viewModel.isPlaying) { newValue in
+            // For non-System TTS: detect when PLAYBACK finishes (Play button was pressed)
+            if wasActuallySpeaking && !newValue && isNewYearMode && !viewModel.isSystemTTS {
+                // Playback just finished - show celebration!
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    showCelebration = true
+                }
+            }
+            if !viewModel.isSystemTTS {
+                wasActuallySpeaking = newValue
+            }
+        }
+        .onChange(of: viewModel.isGenerating) { newValue in
+            // For System TTS: detect when SPEAKING finishes (Speak button was pressed)
+            // System TTS plays directly during "generation"
+            if wasActuallySpeaking && !newValue && isNewYearMode && viewModel.isSystemTTS {
+                // Speaking just finished - show celebration!
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    showCelebration = true
+                }
+            }
+            if viewModel.isSystemTTS {
+                wasActuallySpeaking = newValue
             }
         }
     }
@@ -372,6 +454,7 @@ struct TextToSpeechView: View {
         let secs = Int(seconds) % 60
         return String(format: "%d:%02d", mins, secs)
     }
+    
 }
 
 // MARK: - View Model
